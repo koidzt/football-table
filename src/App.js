@@ -38,7 +38,7 @@ function App() {
         return newClubs;
       })
       .then((resClubs) => {
-        console.log('Clunb =>', resClubs);
+        // console.log('Clunb =>', resClubs);
         fetch('/en.1.json', {
           headers: {
             'Content-Type': 'application/json',
@@ -51,7 +51,7 @@ function App() {
           })
           .then((jsonResponse) => {
             // console.log(jsonResponse);
-            console.log('Rounds =>', jsonResponse.rounds);
+            // console.log('Rounds =>', jsonResponse.rounds);
             return jsonResponse.rounds;
           })
           .then((resRounds) => {
@@ -61,11 +61,7 @@ function App() {
                 if (resRounds[i].matches[j].score.ft[0] > resRounds[i].matches[j].score.ft[1]) {
                   const indClubWon = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team1);
                   newClubs[indClubWon] = {
-                    code: newClubs[indClubWon].code,
-                    country: newClubs[indClubWon].country,
-                    drawn: newClubs[indClubWon].drawn,
-                    lost: newClubs[indClubWon].lost,
-                    name: newClubs[indClubWon].name,
+                    ...newClubs[indClubWon],
                     played: newClubs[indClubWon].played + 1,
                     point: newClubs[indClubWon].point + 3,
                     won: newClubs[indClubWon].won + 1,
@@ -73,23 +69,14 @@ function App() {
 
                   const indClubLost = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team2);
                   newClubs[indClubLost] = {
-                    code: newClubs[indClubLost].code,
-                    country: newClubs[indClubLost].country,
-                    drawn: newClubs[indClubLost].drawn,
+                    ...newClubs[indClubLost],
                     lost: newClubs[indClubLost].lost + 1,
-                    name: newClubs[indClubLost].name,
                     played: newClubs[indClubLost].played + 1,
-                    point: newClubs[indClubLost].point,
-                    won: newClubs[indClubLost].won,
                   };
                 } else if (resRounds[i].matches[j].score.ft[0] < resRounds[i].matches[j].score.ft[1]) {
                   const indClubWon = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team2);
                   newClubs[indClubWon] = {
-                    code: newClubs[indClubWon].code,
-                    country: newClubs[indClubWon].country,
-                    drawn: newClubs[indClubWon].drawn,
-                    lost: newClubs[indClubWon].lost,
-                    name: newClubs[indClubWon].name,
+                    ...newClubs[indClubWon],
                     played: newClubs[indClubWon].played + 1,
                     point: newClubs[indClubWon].point + 3,
                     won: newClubs[indClubWon].won + 1,
@@ -97,38 +84,25 @@ function App() {
 
                   const indClubLost = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team1);
                   newClubs[indClubLost] = {
-                    code: newClubs[indClubLost].code,
-                    country: newClubs[indClubLost].country,
-                    drawn: newClubs[indClubLost].drawn,
+                    ...newClubs[indClubLost],
                     lost: newClubs[indClubLost].lost + 1,
-                    name: newClubs[indClubLost].name,
                     played: newClubs[indClubLost].played + 1,
-                    point: newClubs[indClubLost].point,
-                    won: newClubs[indClubLost].won,
                   };
                 } else {
                   const indClubTeam1 = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team1);
                   newClubs[indClubTeam1] = {
-                    code: newClubs[indClubTeam1].code,
-                    country: newClubs[indClubTeam1].country,
+                    ...newClubs[indClubTeam1],
                     drawn: newClubs[indClubTeam1].drawn + 1,
-                    lost: newClubs[indClubTeam1].lost,
-                    name: newClubs[indClubTeam1].name,
                     played: newClubs[indClubTeam1].played + 1,
                     point: newClubs[indClubTeam1].point + 1,
-                    won: newClubs[indClubTeam1].won,
                   };
 
                   const indClubTeam2 = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team2);
                   newClubs[indClubTeam2] = {
-                    code: newClubs[indClubTeam2].code,
-                    country: newClubs[indClubTeam2].country,
+                    ...newClubs[indClubTeam2],
                     drawn: newClubs[indClubTeam2].drawn + 1,
-                    lost: newClubs[indClubTeam2].lost,
-                    name: newClubs[indClubTeam2].name,
                     played: newClubs[indClubTeam2].played + 1,
                     point: newClubs[indClubTeam2].point + 1,
-                    won: newClubs[indClubTeam2].won,
                   };
                 }
                 setClubs(newClubs);
