@@ -105,7 +105,7 @@ function App() {
                     point: newClubs[indClubTeam2].point + 1,
                   };
                 }
-                setClubs(newClubs);
+                setClubs(newClubs.sort((a, b) => b.point - a.point));
               }
             }
             setRounds(resRounds);
@@ -121,7 +121,7 @@ function App() {
         <table className="table container">
           <thead>
             <tr>
-              <th>Club</th>
+              <th colSpan="2">Club</th>
               <th>Played</th>
               <th>Won</th>
               <th>Drawn</th>
@@ -130,8 +130,9 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {clubs.map((club) => (
-              <tr>
+            {clubs.map((club, i) => (
+              <tr key={club.name}>
+                <td>{i + 1}</td>
                 <td>{club.name}</td>
                 <td>{club.played}</td>
                 <td>{club.won}</td>
