@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import './App.css';
+const _ = require('lodash');
 
 function App() {
-  const [clubs, setClubs] = useState([]);
-  const [rounds, setRounds] = useState([]);
+  // const [clubs, setClubs] = useState([]);
+  // const [rounds, setRounds] = useState([]);
   const [sumClubs, setSumClubs] = useState([]);
 
   useEffect(() => {
@@ -27,34 +28,32 @@ function App() {
       resRounds = await resRounds.rounds;
 
       let matchResults = {};
-      for (let i = 0; i < resClubs.length; i++) {
-        matchResults[resClubs[i].name] = {
+      _.forEach(resClubs, (club) => {
+        matchResults[club.name] = {
+          name: club.name,
           played: 0,
           won: 0,
           drawn: 0,
           lost: 0,
           point: 0,
         };
-      }
+      });
       // console.log(matchResults);
 
-      for (let i = 0; i < resRounds.length; i++) {
-        for (let j = 0; j < resRounds[i].matches.length; j++) {
-          if (resRounds[i].matches[j].score.ft[0] === resRounds[i].matches[j].score.ft[1]) {
-            const drawnClubs = [resRounds[i].matches[j].team1, resRounds[i].matches[j].team2];
-            for (let k = 0; k < 2; k++) {
-              matchResults[drawnClubs[k]] = {
-                ...matchResults[drawnClubs[k]],
-                played: matchResults[drawnClubs[k]].played + 1,
-                drawn: matchResults[drawnClubs[k]].drawn + 1,
-                point: matchResults[drawnClubs[k]].point + 1,
+      _.forEach(resRounds, (round) => {
+        _.forEach(round.matches, (match) => {
+          if (match.score.ft[0] === match.score.ft[1]) {
+            const drawnClubs = [match.team1, match.team2];
+            _.forEach(drawnClubs, (name) => {
+              matchResults[name] = {
+                ...matchResults[name],
+                played: matchResults[name].played + 1,
+                drawn: matchResults[name].drawn + 1,
+                point: matchResults[name].point + 1,
               };
-            }
+            });
           } else {
-            const clubWin =
-              resRounds[i].matches[j].score.ft[0] > resRounds[i].matches[j].score.ft[1]
-                ? resRounds[i].matches[j].team1
-                : resRounds[i].matches[j].team2;
+            const clubWin = match.score.ft[0] > match.score.ft[1] ? match.team1 : match.team2;
             // Win
             matchResults[clubWin] = {
               ...matchResults[clubWin],
@@ -63,10 +62,7 @@ function App() {
               point: matchResults[clubWin].point + 3,
             };
 
-            const clubLost =
-              resRounds[i].matches[j].score.ft[0] < resRounds[i].matches[j].score.ft[1]
-                ? resRounds[i].matches[j].team1
-                : resRounds[i].matches[j].team2;
+            const clubLost = match.score.ft[0] < match.score.ft[1] ? match.team1 : match.team2;
             //Lost
             matchResults[clubLost] = {
               ...matchResults[clubLost],
@@ -74,21 +70,15 @@ function App() {
               lost: matchResults[clubLost].lost + 1,
             };
           }
-        }
-      }
-
-      let newMatchResults = [];
-      for (let key in matchResults) {
-        newMatchResults.push({
-          name: key,
-          ...matchResults[key],
         });
-      }
-      newMatchResults = newMatchResults.sort((a, b) => b.point - a.point);
-      // console.log(newMatchResults);
+      });
+
+      const newMatchResults = await _.sortBy(matchResults, 'point').reverse();
+      console.log(newMatchResults);
+
       setSumClubs(newMatchResults);
-      setClubs(resClubs);
-      setRounds(resRounds);
+      // setClubs(resClubs);
+      // setRounds(resRounds);
     };
 
     fetchData();
