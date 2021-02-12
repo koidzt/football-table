@@ -74,7 +74,7 @@ function App() {
       });
 
       const newMatchResults = await _.sortBy(matchResults, 'point').reverse();
-      console.log(newMatchResults);
+      // console.log(newMatchResults);
 
       setSumClubs(newMatchResults);
       // setClubs(resClubs);
