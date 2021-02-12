@@ -16,7 +16,7 @@ function App() {
         },
       });
       resClubs = await resClubs.json();
-      resClubs = await resClubs.clubs;
+      resClubs = resClubs.clubs;
 
       let resRounds = await fetch('/en.1.json', {
         headers: {
@@ -25,7 +25,7 @@ function App() {
         },
       });
       resRounds = await resRounds.json();
-      resRounds = await resRounds.rounds;
+      resRounds = resRounds.rounds;
 
       let matchResults = {};
       _.forEach(resClubs, (club) => {
@@ -73,7 +73,7 @@ function App() {
         });
       });
 
-      const newMatchResults = await _.sortBy(matchResults, 'point').reverse();
+      const newMatchResults = _.sortBy(matchResults, 'point').reverse();
       // console.log(newMatchResults);
 
       setSumClubs(newMatchResults);
