@@ -7,115 +7,91 @@ function App() {
   const [sumClubs, setSumClubs] = useState([]);
 
   useEffect(() => {
-    fetch('/en.1.clubs.json', {
-      headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      },
-    })
-      .then((res) => {
-        // console.log(res);
-        return res.json();
-      })
-      .then((jsonResponse) => {
-        // console.log(jsonResponse);
-        return jsonResponse.clubs;
-      })
-      .then((resClubs) => {
-        // console.log('Clunb =>', resClubs);
-        fetch('/en.1.json', {
-          headers: {
-            'Content-Type': 'application/json',
-            Accept: 'application/json',
-          },
-        })
-          .then((res) => {
-            // console.log(res);
-            return res.json();
-          })
-          .then((jsonResponse) => {
-            // console.log(jsonResponse);
-            // console.log('Rounds =>', jsonResponse.rounds);
-            return jsonResponse.rounds;
-          })
-          .then((resRounds) => {
-            let matchResults = {};
-            for (let i = 0; i < resClubs.length; i++) {
-              matchResults[resClubs[i].name] = {
-                played: 0,
-                won: 0,
-                drawn: 0,
-                lost: 0,
-                point: 0,
+    const fetchData = async () => {
+      let resClubs = await fetch('/en.1.clubs.json', {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      });
+      resClubs = await resClubs.json();
+      resClubs = await resClubs.clubs;
+
+      let resRounds = await fetch('/en.1.json', {
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+      });
+      resRounds = await resRounds.json();
+      resRounds = await resRounds.rounds;
+
+      let matchResults = {};
+      for (let i = 0; i < resClubs.length; i++) {
+        matchResults[resClubs[i].name] = {
+          played: 0,
+          won: 0,
+          drawn: 0,
+          lost: 0,
+          point: 0,
+        };
+      }
+      // console.log(matchResults);
+
+      for (let i = 0; i < resRounds.length; i++) {
+        for (let j = 0; j < resRounds[i].matches.length; j++) {
+          if (resRounds[i].matches[j].score.ft[0] === resRounds[i].matches[j].score.ft[1]) {
+            const drawnClubs = [resRounds[i].matches[j].team1, resRounds[i].matches[j].team2];
+            for (let k = 0; k < 2; k++) {
+              matchResults[drawnClubs[k]] = {
+                ...matchResults[drawnClubs[k]],
+                played: matchResults[drawnClubs[k]].played + 1,
+                drawn: matchResults[drawnClubs[k]].drawn + 1,
+                point: matchResults[drawnClubs[k]].point + 1,
               };
             }
-            // console.log(matchResults);
+          } else {
+            const clubWin =
+              resRounds[i].matches[j].score.ft[0] > resRounds[i].matches[j].score.ft[1]
+                ? resRounds[i].matches[j].team1
+                : resRounds[i].matches[j].team2;
+            // Win
+            matchResults[clubWin] = {
+              ...matchResults[clubWin],
+              played: matchResults[clubWin].played + 1,
+              won: matchResults[clubWin].won + 1,
+              point: matchResults[clubWin].point + 3,
+            };
 
-            for (let i = 0; i < resRounds.length; i++) {
-              for (let j = 0; j < resRounds[i].matches.length; j++) {
-                if (resRounds[i].matches[j].score.ft[0] > resRounds[i].matches[j].score.ft[1]) {
-                  // Win
-                  matchResults[resRounds[i].matches[j].team1] = {
-                    ...matchResults[resRounds[i].matches[j].team1],
-                    played: matchResults[resRounds[i].matches[j].team1].played + 1,
-                    won: matchResults[resRounds[i].matches[j].team1].won + 1,
-                    point: matchResults[resRounds[i].matches[j].team1].point + 3,
-                  };
+            const clubLost =
+              resRounds[i].matches[j].score.ft[0] < resRounds[i].matches[j].score.ft[1]
+                ? resRounds[i].matches[j].team1
+                : resRounds[i].matches[j].team2;
+            //Lost
+            matchResults[clubLost] = {
+              ...matchResults[clubLost],
+              played: matchResults[clubLost].played + 1,
+              lost: matchResults[clubLost].lost + 1,
+            };
+          }
+        }
+      }
 
-                  //Lost
-                  matchResults[resRounds[i].matches[j].team2] = {
-                    ...matchResults[resRounds[i].matches[j].team2],
-                    played: matchResults[resRounds[i].matches[j].team2].played + 1,
-                    lost: matchResults[resRounds[i].matches[j].team2].lost + 1,
-                  };
-                } else if (resRounds[i].matches[j].score.ft[0] < resRounds[i].matches[j].score.ft[1]) {
-                  // Win
-                  matchResults[resRounds[i].matches[j].team2] = {
-                    ...matchResults[resRounds[i].matches[j].team2],
-                    played: matchResults[resRounds[i].matches[j].team2].played + 1,
-                    won: matchResults[resRounds[i].matches[j].team2].won + 1,
-                    point: matchResults[resRounds[i].matches[j].team2].point + 3,
-                  };
+      let newMatchResults = [];
+      for (let key in matchResults) {
+        newMatchResults.push({
+          name: key,
+          ...matchResults[key],
+        });
+      }
+      newMatchResults = newMatchResults.sort((a, b) => b.point - a.point);
+      // console.log(newMatchResults);
+      setSumClubs(newMatchResults);
+      setClubs(resClubs);
+      setRounds(resRounds);
+    };
 
-                  //Lost
-                  matchResults[resRounds[i].matches[j].team1] = {
-                    ...matchResults[resRounds[i].matches[j].team1],
-                    played: matchResults[resRounds[i].matches[j].team1].played + 1,
-                    lost: matchResults[resRounds[i].matches[j].team1].lost + 1,
-                  };
-                } else {
-                  //Drawn
-                  matchResults[resRounds[i].matches[j].team1] = {
-                    ...matchResults[resRounds[i].matches[j].team1],
-                    played: matchResults[resRounds[i].matches[j].team1].played + 1,
-                    drawn: matchResults[resRounds[i].matches[j].team1].drawn + 1,
-                    point: matchResults[resRounds[i].matches[j].team1].point + 1,
-                  };
-
-                  matchResults[resRounds[i].matches[j].team2] = {
-                    ...matchResults[resRounds[i].matches[j].team2],
-                    played: matchResults[resRounds[i].matches[j].team2].played + 1,
-                    drawn: matchResults[resRounds[i].matches[j].team2].drawn + 1,
-                    point: matchResults[resRounds[i].matches[j].team2].point + 1,
-                  };
-                }
-              }
-            }
-
-            let newMatchResults = [];
-            for (let key in matchResults) {
-              newMatchResults.push({
-                name: key,
-                ...matchResults[key],
-              });
-            }
-            newMatchResults = newMatchResults.sort((a, b) => b.point - a.point);
-            // console.log(newMatchResults);
-            setSumClubs(newMatchResults);
-            setClubs(resClubs);
-            setRounds(resRounds);
-          });
-      });
+    fetchData();
   }, []);
 
   return (
