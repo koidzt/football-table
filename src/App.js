@@ -4,7 +4,7 @@ import './App.css';
 function App() {
   const [clubs, setClubs] = useState([]);
   const [rounds, setRounds] = useState([]);
-  const [isShow, setIsShow] = useState(false);
+  const [sumClubs, setSumClubs] = useState([]);
 
   useEffect(() => {
     fetch('/en.1.clubs.json', {
@@ -20,22 +20,6 @@ function App() {
       .then((jsonResponse) => {
         // console.log(jsonResponse);
         return jsonResponse.clubs;
-      })
-      .then((dataClubs) => {
-        // console.log('Clubs =>', dataClubs);
-        let newClubs = [];
-        for (let i = 0; i < dataClubs.length; i++) {
-          const newClub = {
-            ...dataClubs[i],
-            played: 0,
-            won: 0,
-            drawn: 0,
-            lost: 0,
-            point: 0,
-          };
-          newClubs.push(newClub);
-        }
-        return newClubs;
       })
       .then((resClubs) => {
         // console.log('Clunb =>', resClubs);
@@ -55,59 +39,80 @@ function App() {
             return jsonResponse.rounds;
           })
           .then((resRounds) => {
-            const newClubs = [...resClubs];
+            let matchResults = {};
+            for (let i = 0; i < resClubs.length; i++) {
+              matchResults[resClubs[i].name] = {
+                played: 0,
+                won: 0,
+                drawn: 0,
+                lost: 0,
+                point: 0,
+              };
+            }
+            // console.log(matchResults);
+
             for (let i = 0; i < resRounds.length; i++) {
               for (let j = 0; j < resRounds[i].matches.length; j++) {
                 if (resRounds[i].matches[j].score.ft[0] > resRounds[i].matches[j].score.ft[1]) {
-                  const indClubWon = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team1);
-                  newClubs[indClubWon] = {
-                    ...newClubs[indClubWon],
-                    played: newClubs[indClubWon].played + 1,
-                    point: newClubs[indClubWon].point + 3,
-                    won: newClubs[indClubWon].won + 1,
+                  // Win
+                  matchResults[resRounds[i].matches[j].team1] = {
+                    ...matchResults[resRounds[i].matches[j].team1],
+                    played: matchResults[resRounds[i].matches[j].team1].played + 1,
+                    won: matchResults[resRounds[i].matches[j].team1].won + 1,
+                    point: matchResults[resRounds[i].matches[j].team1].point + 3,
                   };
 
-                  const indClubLost = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team2);
-                  newClubs[indClubLost] = {
-                    ...newClubs[indClubLost],
-                    lost: newClubs[indClubLost].lost + 1,
-                    played: newClubs[indClubLost].played + 1,
+                  //Lost
+                  matchResults[resRounds[i].matches[j].team2] = {
+                    ...matchResults[resRounds[i].matches[j].team2],
+                    played: matchResults[resRounds[i].matches[j].team2].played + 1,
+                    lost: matchResults[resRounds[i].matches[j].team2].lost + 1,
                   };
                 } else if (resRounds[i].matches[j].score.ft[0] < resRounds[i].matches[j].score.ft[1]) {
-                  const indClubWon = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team2);
-                  newClubs[indClubWon] = {
-                    ...newClubs[indClubWon],
-                    played: newClubs[indClubWon].played + 1,
-                    point: newClubs[indClubWon].point + 3,
-                    won: newClubs[indClubWon].won + 1,
+                  // Win
+                  matchResults[resRounds[i].matches[j].team2] = {
+                    ...matchResults[resRounds[i].matches[j].team2],
+                    played: matchResults[resRounds[i].matches[j].team2].played + 1,
+                    won: matchResults[resRounds[i].matches[j].team2].won + 1,
+                    point: matchResults[resRounds[i].matches[j].team2].point + 3,
                   };
 
-                  const indClubLost = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team1);
-                  newClubs[indClubLost] = {
-                    ...newClubs[indClubLost],
-                    lost: newClubs[indClubLost].lost + 1,
-                    played: newClubs[indClubLost].played + 1,
+                  //Lost
+                  matchResults[resRounds[i].matches[j].team1] = {
+                    ...matchResults[resRounds[i].matches[j].team1],
+                    played: matchResults[resRounds[i].matches[j].team1].played + 1,
+                    lost: matchResults[resRounds[i].matches[j].team1].lost + 1,
                   };
                 } else {
-                  const indClubTeam1 = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team1);
-                  newClubs[indClubTeam1] = {
-                    ...newClubs[indClubTeam1],
-                    drawn: newClubs[indClubTeam1].drawn + 1,
-                    played: newClubs[indClubTeam1].played + 1,
-                    point: newClubs[indClubTeam1].point + 1,
+                  //Drawn
+                  matchResults[resRounds[i].matches[j].team1] = {
+                    ...matchResults[resRounds[i].matches[j].team1],
+                    played: matchResults[resRounds[i].matches[j].team1].played + 1,
+                    drawn: matchResults[resRounds[i].matches[j].team1].drawn + 1,
+                    point: matchResults[resRounds[i].matches[j].team1].point + 1,
                   };
 
-                  const indClubTeam2 = newClubs.findIndex((club) => club.name === resRounds[i].matches[j].team2);
-                  newClubs[indClubTeam2] = {
-                    ...newClubs[indClubTeam2],
-                    drawn: newClubs[indClubTeam2].drawn + 1,
-                    played: newClubs[indClubTeam2].played + 1,
-                    point: newClubs[indClubTeam2].point + 1,
+                  matchResults[resRounds[i].matches[j].team2] = {
+                    ...matchResults[resRounds[i].matches[j].team2],
+                    played: matchResults[resRounds[i].matches[j].team2].played + 1,
+                    drawn: matchResults[resRounds[i].matches[j].team2].drawn + 1,
+                    point: matchResults[resRounds[i].matches[j].team2].point + 1,
                   };
                 }
-                setClubs(newClubs.sort((a, b) => b.point - a.point));
               }
             }
+
+            let newMatchResults = [];
+            for (let key in matchResults) {
+              newMatchResults.push({
+                name: key,
+                ...matchResults[key],
+              });
+            }
+            newMatchResults = newMatchResults.sort((a, b) => b.point - a.point);
+            // console.log(newMatchResults);
+            setSumClubs(newMatchResults);
+            setClubs(resClubs);
             setRounds(resRounds);
           });
       });
@@ -130,7 +135,7 @@ function App() {
             </tr>
           </thead>
           <tbody>
-            {clubs.map((club, i) => (
+            {sumClubs.map((club, i) => (
               <tr key={club.name}>
                 <td>{i + 1}</td>
                 <td>{club.name}</td>
