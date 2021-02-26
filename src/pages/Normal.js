@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-const _ = require('lodash');
+import _forEach from 'lodash/forEach';
+import _sortBy from 'lodash/sortBy';
 
 //Fetch Clubs
 const fetchClubsData = async () => {
@@ -32,14 +33,17 @@ const fetchRoundsData = async () => {
 //Created Match Result for each Clubs
 const matchResultsForEachClub = (resClubs) => {
   let matchResults = {};
-  _.forEach(resClubs, (club) => {
+  _forEach(resClubs, (club) => {
     matchResults[club.name] = {
       name: club.name,
       played: 0,
       won: 0,
       drawn: 0,
       lost: 0,
-      point: 0,
+      goalsFor: 0,
+      goalsAgainst: 0,
+      goalDifference: 0,
+      points: 0,
     };
   });
   // console.log(matchResults);
@@ -50,34 +54,62 @@ const matchResultsForEachClub = (resClubs) => {
 //Updated Match Results
 const updatedMatchResults = (newMatchResults, resRounds) => {
   let matchResults = { ...newMatchResults };
-  _.forEach(resRounds, (round) => {
-    _.forEach(round.matches, (match) => {
+  _forEach(resRounds, (round) => {
+    _forEach(round.matches, (match) => {
       if (match.score.ft[0] === match.score.ft[1]) {
         const drawnClubs = [match.team1, match.team2];
-        _.forEach(drawnClubs, (name) => {
+        _forEach(drawnClubs, (name) => {
           matchResults[name] = {
             ...matchResults[name],
             played: matchResults[name].played + 1,
             drawn: matchResults[name].drawn + 1,
-            point: matchResults[name].point + 1,
+            points: matchResults[name].points + 1,
+            goalsFor: matchResults[name].goalsFor + match.score.ft[0],
+            goalsAgainst: matchResults[name].goalsAgainst + match.score.ft[0],
           };
         });
-      } else {
-        const clubWin = match.score.ft[0] > match.score.ft[1] ? match.team1 : match.team2;
-        // Win
-        matchResults[clubWin] = {
-          ...matchResults[clubWin],
-          played: matchResults[clubWin].played + 1,
-          won: matchResults[clubWin].won + 1,
-          point: matchResults[clubWin].point + 3,
+      }
+      if (match.score.ft[0] > match.score.ft[1]) {
+        //Win
+        matchResults[match.team1] = {
+          ...matchResults[match.team1],
+          played: matchResults[match.team1].played + 1,
+          won: matchResults[match.team1].won + 1,
+          points: matchResults[match.team1].points + 3,
+          goalsFor: matchResults[match.team1].goalsFor + match.score.ft[0],
+          goalsAgainst: matchResults[match.team1].goalsAgainst + match.score.ft[1],
+          goalDifference: matchResults[match.team1].goalDifference + (match.score.ft[0] - match.score.ft[1]),
         };
 
-        const clubLost = match.score.ft[0] < match.score.ft[1] ? match.team1 : match.team2;
         //Lost
-        matchResults[clubLost] = {
-          ...matchResults[clubLost],
-          played: matchResults[clubLost].played + 1,
-          lost: matchResults[clubLost].lost + 1,
+        matchResults[match.team2] = {
+          ...matchResults[match.team2],
+          played: matchResults[match.team2].played + 1,
+          lost: matchResults[match.team2].lost + 1,
+          goalsFor: matchResults[match.team2].goalsFor + match.score.ft[1],
+          goalsAgainst: matchResults[match.team2].goalsAgainst + match.score.ft[0],
+          goalDifference: matchResults[match.team2].goalDifference + (match.score.ft[1] - match.score.ft[0]),
+        };
+      }
+      if (match.score.ft[0] < match.score.ft[1]) {
+        //Lost
+        matchResults[match.team1] = {
+          ...matchResults[match.team1],
+          played: matchResults[match.team1].played + 1,
+          lost: matchResults[match.team1].lost + 1,
+          goalsFor: matchResults[match.team1].goalsFor + match.score.ft[0],
+          goalsAgainst: matchResults[match.team1].goalsAgainst + match.score.ft[1],
+          goalDifference: matchResults[match.team1].goalDifference + (match.score.ft[0] - match.score.ft[1]),
+        };
+        //Win
+        matchResults[match.team2] = {
+          ...matchResults[match.team2],
+          played: matchResults[match.team2].played + 1,
+          won: matchResults[match.team2].won + 1,
+          points: matchResults[match.team2].points + 3,
+          goalsFor: matchResults[match.team2].goalsFor + match.score.ft[1],
+          goalsAgainst: matchResults[match.team2].goalsAgainst + match.score.ft[0],
+          goalDifference: matchResults[match.team2].goalDifference + (match.score.ft[1] - match.score.ft[0]),
         };
       }
     });
@@ -88,7 +120,9 @@ const updatedMatchResults = (newMatchResults, resRounds) => {
 
 //Sort Match Results By Points and Change Object to Array
 const sortRankForEachClub = (matchResults) => {
-  const sortPointsByDesc = _.sortBy(matchResults, 'point').reverse();
+  const sortGdByDesc = _sortBy(matchResults, 'gd');
+  const sortPointsByDesc = _sortBy(sortGdByDesc, 'points').reverse();
+
   return sortPointsByDesc;
 };
 
@@ -116,11 +150,15 @@ function Normal() {
       <table className="table container">
         <thead>
           <tr>
-            <th colSpan="2">Club</th>
+            <th>Position</th>
+            <th>Club</th>
             <th>Played</th>
             <th>Won</th>
             <th>Drawn</th>
             <th>Lost</th>
+            <th>GF</th>
+            <th>GA</th>
+            <th>GD</th>
             <th>Points</th>
           </tr>
         </thead>
@@ -128,12 +166,15 @@ function Normal() {
           {sumClubs.map((club, i) => (
             <tr key={club.name}>
               <td>{i + 1}</td>
-              <td>{club.name}</td>
+              <td className="text-start">{club.name}</td>
               <td>{club.played}</td>
               <td>{club.won}</td>
               <td>{club.drawn}</td>
               <td>{club.lost}</td>
-              <td>{club.point}</td>
+              <td>{club.goalsFor}</td>
+              <td>{club.goalsAgainst}</td>
+              <td>{club.goalDifference}</td>
+              <td>{club.points}</td>
             </tr>
           ))}
         </tbody>

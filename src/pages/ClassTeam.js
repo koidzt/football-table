@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import Team from '../components/Team';
-const _ = require('lodash');
+import _sortBy from 'lodash/sortBy';
 
 //Fetch Rounds
 const fetchRoundsData = async () => {
@@ -13,20 +13,32 @@ const fetchRoundsData = async () => {
   resRounds = await resRounds.json();
 
   //spread matches
-  const reduceResRounds = resRounds.rounds.reduce((acc, round) => {
+  const allMatches = resRounds.rounds.reduce((acc, round) => {
     acc = [...acc, ...round.matches];
     return acc;
   }, []);
 
-  const sortRounds = reduceResRounds.sort((a, b) => a.date > b.date); // 2017-11-04 --> 2018-05-13
-  // const sortRounds = reduceResRounds.sort((a, b) => (a.date > b.date ? -1 : 1)); //  2018-05-13 --> 2017-11-04
+  return allMatches;
 
-  return sortRounds;
+  // const sortMatches = allMatches.sort((a, b) => a.date > b.date); // 2017-11-04 --> 2018-05-13
+  // const sortMatches = allMatches.sort((a, b) => (a.date > b.date ? -1 : 1)); //  2018-05-13 --> 2017-11-04
+
+  // return sortMatches;
 };
 
-// Updated Match Results
-const updatedMatchResults = (resRounds) => {
-  const computedData = resRounds.reduce((acc, match) => {
+// Updates Goals
+const updatedGoals = (match, team1, team2) => {
+  team1.gf = team1.gf + match.score.ft[0];
+  team1.ga = team1.ga + match.score.ft[1];
+  team1.gd = team1.gd + match.score.ft[0] - match.score.ft[1];
+  team2.gf = team2.gf + match.score.ft[1];
+  team2.ga = team2.ga + match.score.ft[0];
+  team2.gd = team2.gd + match.score.ft[1] - match.score.ft[0];
+};
+
+// Compute Match Results
+const computeMatchResults = (allMatches) => {
+  const computedData = allMatches.reduce((acc, match) => {
     if (!acc[match.team1]) {
       acc[match.team1] = new Team(match.team1);
     }
@@ -50,6 +62,8 @@ const updatedMatchResults = (resRounds) => {
       acc[match.team2].updatedMatchResults('drawn');
     }
 
+    updatedGoals(match, acc[match.team1], acc[match.team2]);
+
     return acc;
   }, {});
 
@@ -58,20 +72,21 @@ const updatedMatchResults = (resRounds) => {
 
 //Sort Match Results By Points and Change Object to Array
 const sortRankForEachClub = (matchResults) => {
-  const sortPointsByDesc = _.sortBy(matchResults, 'point').reverse();
+  const sortGdByDesc = _sortBy(matchResults, 'gd');
+  const sortPointsByDesc = _sortBy(sortGdByDesc, 'points').reverse();
+
   return sortPointsByDesc;
 };
 
 function ClassTeam() {
-  const [matches, setMatches] = useState([]);
   const [clubs, setClubs] = useState([]);
 
   useEffect(async () => {
-    const fetchAllMatches = await fetchRoundsData();
-    const matchResults = updatedMatchResults(fetchAllMatches);
+    const allMatches = await fetchRoundsData();
+    const matchResults = computeMatchResults(allMatches);
     const rankClubs = sortRankForEachClub(matchResults);
 
-    setMatches(fetchAllMatches);
+    console.log(matchResults);
     setClubs(rankClubs);
   }, []);
 
@@ -82,11 +97,15 @@ function ClassTeam() {
       <table className="table">
         <thead>
           <tr>
-            <th colSpan="2">Club</th>
+            <th>Position</th>
+            <th>Club</th>
             <th>Played</th>
             <th>Won</th>
             <th>Drawn</th>
             <th>Lost</th>
+            <th>GF</th>
+            <th>GA</th>
+            <th>GD</th>
             <th>Points</th>
           </tr>
         </thead>
@@ -94,12 +113,15 @@ function ClassTeam() {
           {clubs.map((club, i) => (
             <tr key={club.name}>
               <td>{i + 1}</td>
-              <td>{club.name}</td>
+              <td className="text-start">{club.name}</td>
               <td>{club.played}</td>
               <td>{club.won}</td>
               <td>{club.drawn}</td>
               <td>{club.lost}</td>
-              <td>{club.point}</td>
+              <td>{club.gf}</td>
+              <td>{club.ga}</td>
+              <td>{club.gd}</td>
+              <td>{club.points}</td>
             </tr>
           ))}
         </tbody>
